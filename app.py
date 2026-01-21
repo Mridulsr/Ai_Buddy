@@ -1,45 +1,47 @@
 import streamlit as st
 from openai import OpenAI
 
+# Page setup
 st.set_page_config(page_title="AI Study Buddy", page_icon="📚")
+
 st.title("📚 AI Study Buddy")
-st.markdown("Convert complex lecture notes into simple explanations and instant quizzes.")
+st.write("Turn complex notes into simple summaries and quizzes.")
 
-# Initialize client (will read OPENAI_API_KEY from environment)
-client = OpenAI()
+# Sidebar for API Key
+with st.sidebar:
+    st.header("Setup")
+    api_key = st.text_input("Enter OpenAI API Key:", type="password")
+    st.caption("Get a key at platform.openai.com")
 
-user_input = st.text_area(
-    "Paste your study material or lecture notes here:",
-    height=250,
-    placeholder="e.g., The mitochondria is the powerhouse of the cell..."
-)
-
-col1, col2 = st.columns(2)
-
-with col1:
-    if st.button("✨ Simplify & Summarize") and user_input:
-        with st.spinner("Breaking it down..."):
-            prompt = f"Simplify the following text for a student. Use a relatable analogy and then provide 3 key bullet points:\n\n{user_input}"
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a helpful tutor."},
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            st.subheader("Simplified Explanation")
-            st.write(response.choices[0].message["content"])
-
-with col2:
-    if st.button("📝 Generate Quiz") and user_input:
-        with st.spinner("Creating questions..."):
-            prompt = f"Based on this text, create 3 Multiple Choice Questions with answers at the bottom:\n\n{user_input}"
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a quiz generator."},
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            st.subheader("Quick Quiz")
-            st.write(response.choices[0].message["content"])
+if not api_key:
+    st.info("Please enter your OpenAI API Key in the sidebar to continue.")
+else:
+    client = OpenAI(api_key=api_key)
+    
+    # User Input
+    user_text = st.text_area("Paste your notes here:", height=200)
+    
+    if st.button("Generate Study Guide"):
+        if user_text:
+            with st.spinner("Processing..."):
+                try:
+                    prompt = f"""
+                    Summarize this for a student:
+                    1. Simple Explanation (with analogy)
+                    2. 3 Key Bullet Points
+                    3. A 3-question Multiple Choice Quiz
+                    
+                    Text: {user_text}
+                    """
+                    
+                    response = client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=[{"role": "user", "content": prompt}]
+                    )
+                    
+                    st.markdown("---")
+                    st.markdown(response.choices[0].message.content)
+                except Exception as e:
+                    st.error(f"Error: {e}")
+        else:
+            st.warning("Please enter some text first!")
