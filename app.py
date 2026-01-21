@@ -1,47 +1,26 @@
 import streamlit as st
-from openai import OpenAI
+import google.generativeai as genai
 
-# Page setup
 st.set_page_config(page_title="AI Study Buddy", page_icon="📚")
+st.title("📚 AI Study Buddy (Free via Gemini)")
 
-st.title("📚 AI Study Buddy")
-st.write("Turn complex notes into simple summaries and quizzes.")
-
-# Sidebar for API Key
+# Sidebar for Gemini Key
 with st.sidebar:
-    st.header("Setup")
-    api_key = st.text_input("Enter OpenAI API Key:", type="password")
-    st.caption("Get a key at platform.openai.com")
+    api_key = st.text_input("Enter Google Gemini API Key:", type="password")
+    st.info("Get a free key at: aistudio.google.com")
 
 if not api_key:
-    st.info("Please enter your OpenAI API Key in the sidebar to continue.")
+    st.warning("Please enter your Gemini API Key in the sidebar.")
 else:
-    client = OpenAI(api_key=api_key)
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
-    # User Input
-    user_text = st.text_area("Paste your notes here:", height=200)
+    user_input = st.text_area("Paste notes here:", height=200)
     
     if st.button("Generate Study Guide"):
-        if user_text:
-            with st.spinner("Processing..."):
-                try:
-                    prompt = f"""
-                    Summarize this for a student:
-                    1. Simple Explanation (with analogy)
-                    2. 3 Key Bullet Points
-                    3. A 3-question Multiple Choice Quiz
-                    
-                    Text: {user_text}
-                    """
-                    
-                    response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[{"role": "user", "content": prompt}]
-                    )
-                    
-                    st.markdown("---")
-                    st.markdown(response.choices[0].message.content)
-                except Exception as e:
-                    st.error(f"Error: {e}")
-        else:
-            st.warning("Please enter some text first!")
+        if user_input:
+            with st.spinner("Gemini is thinking..."):
+                prompt = f"Summarize this for a student with an analogy, 3 bullet points, and a 3-question quiz: {user_input}"
+                response = model.generate_content(prompt)
+                st.markdown("---")
+                st.write(response.text)
